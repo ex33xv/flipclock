@@ -36,8 +36,11 @@
   // Two flipping overlays animate on top.
   function flipTo(card, oldDigit, newDigit) {
     clear(card);
-    card.appendChild(makeHalf('top', 'half', oldDigit));
-    card.appendChild(makeHalf('bottom', 'half', newDigit));
+    // Static halves are what's revealed/covered by the flipping overlays.
+    // Top: NEW (revealed when the OLD-top flap rotates away).
+    // Bottom: OLD (covered when the NEW-bottom flap rotates in).
+    card.appendChild(makeHalf('top', 'half', newDigit));
+    card.appendChild(makeHalf('bottom', 'half', oldDigit));
     card.appendChild(makeHalf('top', 'flip', oldDigit));
     var bottomFlip = makeHalf('bottom', 'flip', newDigit);
     card.appendChild(bottomFlip);
