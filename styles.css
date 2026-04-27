@@ -34,7 +34,6 @@ html, body {
   align-items: center;
   justify-content: center;
   gap: 6vw;
-  perspective: 1200px;
 }
 
 .group {
@@ -66,6 +65,7 @@ html, body {
   font-weight: 900;
   font-size: 30vw;
   line-height: 1;
+  perspective: 1200px;
 }
 
 /* Static halves: show the current digit's top and bottom. */
