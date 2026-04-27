@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flip Clock</title>
+  <style>
+    :root {
+      --bg: #1a1a1a;
+      --digit: #cfcfcf;
+      --label: #6b6b6b;
+      --seam: #000;
+      --flip-duration: 600ms;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--digit);
+      font-family: "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow: hidden;
+    }
+
+    .brand {
+      position: absolute;
+      top: 24px;
+      left: 32px;
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--digit);
+      z-index: 1;
+    }
+
+    .clock {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6vw;
+      perspective: 1200px;
+    }
+
+    .group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .digits { display: flex; gap: 8px; }
+
+    .label {
+      margin-top: 28px;
+      font-size: 18px;
+      letter-spacing: 0.35em;
+      color: var(--label);
+    }
+
+    .card {
+      position: relative;
+      width: 18vw;
+      height: 28vw;
+      max-width: 240px;
+      max-height: 360px;
+      font-family: "Helvetica Neue", "Arial Black", sans-serif;
+      font-weight: 900;
+      font-size: 30vw;
+      line-height: 1;
+    }
+
+    .card .half {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 50%;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      color: var(--digit);
+      background: var(--bg);
+    }
+    .card .half.top {
+      top: 0;
+      align-items: flex-end;
+      border-bottom: 2px solid var(--seam);
+    }
+    .card .half.top span { transform: translateY(50%); }
+    .card .half.bottom { bottom: 0; align-items: flex-start; }
+    .card .half.bottom span { transform: translateY(-50%); }
+
+    .card .flip {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 50%;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      background: var(--bg);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+    }
+    .card .flip.top {
+      top: 0;
+      align-items: flex-end;
+      border-bottom: 2px solid var(--seam);
+      transform-origin: bottom center;
+      animation: flip-top var(--flip-duration) ease-in forwards;
+    }
+    .card .flip.top span { transform: translateY(50%); }
+    .card .flip.bottom {
+      bottom: 0;
+      align-items: flex-start;
+      transform-origin: top center;
+      transform: rotateX(90deg);
+      animation: flip-bottom var(--flip-duration) ease-out forwards;
+      animation-delay: var(--flip-duration);
+    }
+    .card .flip.bottom span { transform: translateY(-50%); }
+
+    @keyframes flip-top {
+      0%   { transform: rotateX(0deg); }
+      100% { transform: rotateX(-90deg); }
+    }
+    @keyframes flip-bottom {
+      0%   { transform: rotateX(90deg); }
+      100% { transform: rotateX(0deg); }
+    }
+  </style>
+</head>
+<body>
+  <header class="brand">FlipClock</header>
+
+  <main class="clock" aria-label="Local time">
+    <section class="group" aria-label="Hours">
+      <div class="digits">
+        <div class="card" data-slot="h-tens"></div>
+        <div class="card" data-slot="h-ones"></div>
+      </div>
+      <div class="label">HOURS</div>
+    </section>
+
+    <section class="group" aria-label="Minutes">
+      <div class="digits">
+        <div class="card" data-slot="m-tens"></div>
+        <div class="card" data-slot="m-ones"></div>
+      </div>
+      <div class="label">MINUTES</div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      var slots = {};
+      var slotIds = ['h-tens', 'h-ones', 'm-tens', 'm-ones'];
+      slotIds.forEach(function (id) {
+        slots[id] = document.querySelector('[data-slot="' + id + '"]');
+      });
+
+      var current = { 'h-tens': null, 'h-ones': null, 'm-tens': null, 'm-ones': null };
+
+      function makeHalf(kind, layer, digit) {
+        var div = document.createElement('div');
+        div.className = layer + ' ' + kind;
+        var span = document.createElement('span');
+        span.textContent = digit;
+        div.appendChild(span);
+        return div;
+      }
+
+      function clear(card) {
+        while (card.firstChild) card.removeChild(card.firstChild);
+      }
+
+      function renderStatic(card, digit) {
+        clear(card);
+        card.appendChild(makeHalf('top', 'half', digit));
+        card.appendChild(makeHalf('bottom', 'half', digit));
+      }
+
+      function flipTo(card, oldDigit, newDigit) {
+        clear(card);
+        card.appendChild(makeHalf('top', 'half', oldDigit));
+        card.appendChild(makeHalf('bottom', 'half', newDigit));
+        card.appendChild(makeHalf('top', 'flip', oldDigit));
+        var bottomFlip = makeHalf('bottom', 'flip', newDigit);
+        card.appendChild(bottomFlip);
+
+        var settled = false;
+        var settle = function () {
+          if (settled) return;
+          settled = true;
+          renderStatic(card, newDigit);
+        };
+        bottomFlip.addEventListener('animationend', settle);
+        setTimeout(settle, 1400);
+      }
+
+      function update(now) {
+        var hh = String(now.getHours()).padStart(2, '0');
+        var mm = String(now.getMinutes()).padStart(2, '0');
+        var next = {
+          'h-tens': hh[0],
+          'h-ones': hh[1],
+          'm-tens': mm[0],
+          'm-ones': mm[1]
+        };
+
+        slotIds.forEach(function (id) {
+          var card = slots[id];
+          var prev = current[id];
+          if (prev === null) {
+            renderStatic(card, next[id]);
+          } else if (prev !== next[id]) {
+            flipTo(card, prev, next[id]);
+          }
+          current[id] = next[id];
+        });
+      }
+
+      function scheduleNextTick() {
+        var now = new Date();
+        var msIntoMinute = now.getSeconds() * 1000 + now.getMilliseconds();
+        var msUntilNextMinute = 60000 - msIntoMinute + 50;
+        setTimeout(function () {
+          update(new Date());
+          scheduleNextTick();
+        }, msUntilNextMinute);
+      }
+
+      update(new Date());
+      scheduleNextTick();
+    })();
+  </script>
+</body>
+</html>

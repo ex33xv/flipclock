@@ -1,0 +1,143 @@
+:root {
+  --bg: #1a1a1a;
+  --digit: #cfcfcf;
+  --label: #6b6b6b;
+  --seam: #000;
+  --flip-duration: 600ms;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--digit);
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+.brand {
+  position: absolute;
+  top: 24px;
+  left: 32px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--digit);
+}
+
+.clock {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6vw;
+  perspective: 1200px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.digits {
+  display: flex;
+  gap: 8px;
+}
+
+.label {
+  margin-top: 28px;
+  font-size: 18px;
+  letter-spacing: 0.35em;
+  color: var(--label);
+}
+
+/* --- Each card is one digit, split top/bottom by a seam line --- */
+.card {
+  position: relative;
+  width: 18vw;
+  height: 28vw;
+  max-width: 240px;
+  max-height: 360px;
+  font-family: "Helvetica Neue", "Arial Black", sans-serif;
+  font-weight: 900;
+  font-size: 30vw;
+  line-height: 1;
+}
+
+/* Static halves: show the current digit's top and bottom. */
+.card .half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  color: var(--digit);
+  background: var(--bg);
+}
+
+.card .half.top {
+  top: 0;
+  align-items: flex-end;
+  border-bottom: 2px solid var(--seam);
+}
+.card .half.top span { transform: translateY(50%); }
+
+.card .half.bottom {
+  bottom: 0;
+  align-items: flex-start;
+}
+.card .half.bottom span { transform: translateY(-50%); }
+
+/* Flip layers: only present during a transition. */
+.card .flip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  background: var(--bg);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  will-change: transform;
+}
+
+/* The "old top" flips DOWN around the seam (transform-origin at bottom). */
+.card .flip.top {
+  top: 0;
+  align-items: flex-end;
+  border-bottom: 2px solid var(--seam);
+  transform-origin: bottom center;
+  animation: flip-top var(--flip-duration) ease-in forwards;
+}
+.card .flip.top span { transform: translateY(50%); }
+
+/* The "new bottom" flips UP from the seam (transform-origin at top). */
+.card .flip.bottom {
+  bottom: 0;
+  align-items: flex-start;
+  transform-origin: top center;
+  animation: flip-bottom var(--flip-duration) ease-out forwards;
+  animation-delay: var(--flip-duration);
+}
+.card .flip.bottom span { transform: translateY(-50%); }
+
+@keyframes flip-top {
+  0%   { transform: rotateX(0deg); }
+  100% { transform: rotateX(-90deg); }
+}
+
+@keyframes flip-bottom {
+  0%   { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+/* Hide the bottom flip until its delay starts (avoids a flash). */
+.card .flip.bottom { transform: rotateX(90deg); }
